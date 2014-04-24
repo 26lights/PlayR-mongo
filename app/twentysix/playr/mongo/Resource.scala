@@ -1,13 +1,13 @@
 package twentysix.playr.mongo
 
 import scala.concurrent.Future
-
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.JsObject
 import play.api.mvc.{Action, EssentialAction}
 import play.modules.reactivemongo.MongoController
 import twentysix.playr.core
+import reactivemongo.bson.BSONObjectID
 
 trait BaseResource extends core.BaseResource with MongoController{
   type ResourceType
@@ -35,6 +35,9 @@ trait Resource[I, R] extends BaseResource with core.ResourceTrait[I] {
 
 object Resource {
 }
+
+trait IdResource[R] extends Resource[BSONObjectID, R]
+
 
 trait ResourceRead extends core.ResourceRead {
   this: BaseResource =>
