@@ -11,6 +11,7 @@ import play.api.libs.json._
 import play.api.mvc.EssentialAction
 import play.api.mvc.Action
 import scala.concurrent.Future
+import reactivemongo.core.commands.LastError
 
 abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
   def jsonRemoveId =  ( __ \ '_id ).json.prune
@@ -29,6 +30,33 @@ abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
       Json.toJson(list)
   }
 
+  def insertInCollection(value: R): Future[Either[LastError, JsValue]] =
+    insertInCollection(Json.toJson(value))
+
+  /**
+   * Assign an _id to a new json document and insert it in the resource's collection.
+   */
+  def insertInCollection(value: JsValue): Future[Either[LastError, JsValue]] = {
+    val newValue = value.transform(jsonGenerateId).get
+    collection.insert(newValue).map { lastError =>
+      if(lastError.ok) Right(newValue)
+      else Left(lastError)
+    }
+  }
+
+  def updateCollection(selector: JsValue, value: R): Future[Either[LastError, JsValue]] =
+    updateCollection(selector, Json.toJson(value))
+
+  /**
+   * Remove _id from value and update the corresponding document in the resource's collection.
+   */
+  def updateCollection(selector: JsValue, value: JsValue): Future[Either[LastError, JsValue]] = {
+    val newValue = value.transform(jsonRemoveId).get
+    collection.update(selector, newValue).map { lastError =>
+      if(lastError.ok) Right(newValue)
+      else Left(lastError)
+    }
+  }
 }
 
 object MongoResource {
