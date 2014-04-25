@@ -24,6 +24,11 @@ abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
   def parseId(sid: String) = BSONObjectID.parse(sid).toOption
 
   def resourceFromSelector(selector: JsObject) = collection.find(selector).one[R]
+
+  def listFromCollection(selector: JsObject): Future[JsValue] = collection.find(selector).cursor[R].collect[Seq]().map { list =>
+      Json.toJson(list)
+  }
+
 }
 
 object MongoResource {
