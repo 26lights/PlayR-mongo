@@ -14,9 +14,13 @@ import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.commands.LastError
 
 abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
+  val collectionName: String
+
+  val name = collectionName
+
   def idSelector(bid: BSONObjectID) = Json.obj("_id" -> bid)
 
-  def collection: JSONCollection
+  def collection: JSONCollection =  db.collection[JSONCollection](collectionName)
 
   def parseId(sid: String) = BSONObjectID.parse(sid).toOption
 
