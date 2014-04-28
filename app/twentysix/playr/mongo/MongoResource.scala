@@ -16,7 +16,7 @@ import reactivemongo.core.commands.LastError
 abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
   val collectionName: String
 
-  val name = collectionName
+  def name = collectionName
 
   def idSelector(bid: BSONObjectID) = Json.obj("_id" -> bid)
 
