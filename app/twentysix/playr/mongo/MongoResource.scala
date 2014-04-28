@@ -1,23 +1,19 @@
 package twentysix.playr.mongo
 
-import reflect.runtime.universe.{Type,TypeTag,typeOf}
-import play.modules.reactivemongo.json.BSONFormats.BSONObjectIDFormat
+import scala.concurrent.Future
 import scala.language.implicitConversions
+import reflect.runtime.universe.TypeTag
+
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.libs.json._
+import play.api.mvc.{EssentialAction, Request, SimpleResult}
+import play.modules.reactivemongo.json.BSONFormats
+import play.modules.reactivemongo.json.BSONFormats.BSONObjectIDFormat
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.bson.BSONObjectID
-import play.modules.reactivemongo.json.BSONFormats
-import play.api.libs.json._
-import play.api.mvc.EssentialAction
-import play.api.mvc.Action
-import scala.concurrent.Future
 import reactivemongo.core.commands.LastError
 
 abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
-  def jsonRemoveId =  ( __ \ '_id ).json.prune
-
-  def jsonGenerateId = __.json.update((__ \ '_id).json.put(BSONFormats.BSONObjectIDFormat.writes(BSONObjectID.generate)))
-
   def idSelector(bid: BSONObjectID) = Json.obj("_id" -> bid)
 
   def collection: JSONCollection
@@ -25,6 +21,10 @@ abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
   def parseId(sid: String) = BSONObjectID.parse(sid).toOption
 
   def resourceFromSelector(selector: JsObject) = collection.find(selector).one[R]
+
+  def jsonRemoveId =  ( __ \ '_id ).json.prune
+
+  def jsonGenerateId = __.json.update((__ \ '_id).json.put(BSONFormats.BSONObjectIDFormat.writes(BSONObjectID.generate)))
 
   def listFromCollection(selector: JsObject): Future[JsValue] = collection.find(selector).cursor[R].collect[Seq]().map { list =>
       Json.toJson(list)
@@ -57,6 +57,38 @@ abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
       else Left(lastError)
     }
   }
+
+  implicit class FutureMongoResult(result: Future[Either[LastError, JsValue]]) {
+    def ifSuccess(block: JsValue => SimpleResult): Future[SimpleResult] = {
+      result.map{
+        case Right(value) => block(value)
+        case Left(error) => InternalServerError(error.stringify)
+      }
+    }
+  }
+
+  def ifValidBody[T: Reads](block: T => SimpleResult): Request[JsValue] => SimpleResult = {
+    implicit request => withValidBody[T](block)
+  }
+
+  def withValidBody[T: Reads](block: T => SimpleResult)(implicit request: Request[JsValue]): SimpleResult = {
+    request.body.validate[T] match  {
+      case s: JsSuccess[T] => block(s.get)
+      case e: JsError => BadRequest(JsError.toFlatJson(e))
+    }
+  }
+
+  def ifValidBodyAsync[T: Reads](block: T => Future[SimpleResult]): Request[JsValue] => Future[SimpleResult] = {
+      implicit request => withValidBodyAsync[T](block)
+  }
+
+  def withValidBodyAsync[T: Reads](block: T => Future[SimpleResult])(implicit request: Request[JsValue]): Future[SimpleResult] = {
+    request.body.validate[T] match  {
+      case s: JsSuccess[T] => block(s.get)
+      case e: JsError => Future(BadRequest(JsError.toFlatJson(e)))
+    }
+  }
+
 }
 
 object MongoResource {
