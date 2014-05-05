@@ -70,29 +70,6 @@ abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
       }
     }
   }
-
-  def ifValidBody[T: Reads](block: T => SimpleResult): Request[JsValue] => SimpleResult = {
-    implicit request => withValidBody[T](block)
-  }
-
-  def withValidBody[T: Reads](block: T => SimpleResult)(implicit request: Request[JsValue]): SimpleResult = {
-    request.body.validate[T] match  {
-      case s: JsSuccess[T] => block(s.get)
-      case e: JsError => BadRequest(JsError.toFlatJson(e))
-    }
-  }
-
-  def ifValidBodyAsync[T: Reads](block: T => Future[SimpleResult]): Request[JsValue] => Future[SimpleResult] = {
-      implicit request => withValidBodyAsync[T](block)
-  }
-
-  def withValidBodyAsync[T: Reads](block: T => Future[SimpleResult])(implicit request: Request[JsValue]): Future[SimpleResult] = {
-    request.body.validate[T] match  {
-      case s: JsSuccess[T] => block(s.get)
-      case e: JsError => Future(BadRequest(JsError.toFlatJson(e)))
-    }
-  }
-
 }
 
 object MongoResource {

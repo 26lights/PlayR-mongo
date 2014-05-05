@@ -12,7 +12,9 @@ import twentysix.playr.core
 import reactivemongo.bson.BSONObjectID
 import twentysix.playr.ResourceWrapper
 
-trait BaseResource extends core.BaseResource with MongoController{
+trait BaseResource extends core.BaseResource
+                      with core.ResourceShortcuts
+                      with MongoController{
   type ResourceType
 
   def handleAction(id: IdentifierType, f: Function2[JsObject, ResourceType, EssentialAction]) = {
