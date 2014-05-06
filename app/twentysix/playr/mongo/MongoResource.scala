@@ -55,15 +55,6 @@ abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
       else Left(lastError)
     }
   }
-
-  implicit class FutureMongoResult(result: Future[Either[LastError, JsValue]]) {
-    def ifSuccess(block: JsValue => SimpleResult): Future[SimpleResult] = {
-      result.map{
-        case Right(value) => block(value)
-        case Left(error) => InternalServerError(error.stringify)
-      }
-    }
-  }
 }
 
 object MongoResource {
