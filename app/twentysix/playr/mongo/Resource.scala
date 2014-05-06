@@ -14,6 +14,7 @@ import twentysix.playr.ResourceWrapper
 
 trait BaseResource extends core.BaseResource
                       with core.ResourceShortcuts
+                      with ResourceShortcuts
                       with MongoController{
   type ResourceType
 

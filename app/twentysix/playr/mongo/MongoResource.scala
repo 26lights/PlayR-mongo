@@ -18,17 +18,11 @@ abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
 
   def name = collectionName
 
-  def idSelector(bid: BSONObjectID) = Json.obj("_id" -> bid)
-
   def collection: JSONCollection =  db.collection[JSONCollection](collectionName)
 
   def parseId(sid: String) = BSONObjectID.parse(sid).toOption
 
   def resourceFromSelector(selector: JsObject) = collection.find(selector).one[R]
-
-  def jsonRemoveId =  ( __ \ '_id ).json.prune
-
-  def jsonGenerateId = __.json.update((__ \ '_id).json.put(BSONFormats.BSONObjectIDFormat.writes(BSONObjectID.generate)))
 
   def listFromCollection(selector: JsObject): Future[JsValue] = collection.find(selector).cursor[R].collect[Seq]().map { list =>
       Json.toJson(list)
