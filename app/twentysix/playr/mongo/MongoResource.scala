@@ -13,14 +13,16 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.bson.BSONObjectID
 import reactivemongo.core.commands.LastError
 
-abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
+abstract class MongoResource[R:Format] extends Resource[R] {
   val collectionName: String
 
   def name = collectionName
 
   def collection: JSONCollection =  db.collection[JSONCollection](collectionName)
 
-  def parseId(sid: String) = BSONObjectID.parse(sid).toOption
+  def parseId(sid: String) = BSONObjectID.parse(sid).toOption.map(selectorFromId)
+
+  def selectorFromId(id: BSONObjectID): JsObject
 
   def resourceFromSelector(selector: JsObject) = collection.find(selector).one[R]
 
@@ -55,11 +57,6 @@ abstract class MongoResource[R:Format] extends Resource[BSONObjectID, R] {
       else Left(lastError)
     }
   }
-}
-
-object MongoResource {
-  implicit def mongoIdResourceAction[R, C<:MongoResource[R]](f: (JsObject, R)=> EssentialAction)(implicit tt: TypeTag[(JsObject, R)=> EssentialAction]) =
-    Resource.mongoResourceAction[BSONObjectID, R, C](f)
 }
 
 
