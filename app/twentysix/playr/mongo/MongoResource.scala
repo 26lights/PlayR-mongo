@@ -26,9 +26,12 @@ abstract class MongoResource[R:Format] extends Resource[R] {
 
   def resourceFromSelector(selector: JsObject) = collection.find(selector).one[R]
 
-  def listFromCollection(selector: JsObject): Future[JsValue] = collection.find(selector).cursor[R].collect[Seq]().map { list =>
+  def resourcesFromCollection(selector: JsObject): Future[Seq[R]] = collection.find(selector).cursor[R].collect[Seq]()
+
+  def listFromCollection(selector: JsObject): Future[JsValue] = resourcesFromCollection(selector).map { list =>
       Json.toJson(list)
   }
+
 
   def insertInCollection(value: R): Future[Either[LastError, JsValue]] =
     insertInCollection(Json.toJson(value))
