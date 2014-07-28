@@ -28,5 +28,12 @@ trait ResourceShortcuts {
         case Left(error) => InternalServerError(error.stringify)
       }
     }
-  }
+
+    def ifSuccessAsync(block: JsValue => Future[SimpleResult]): Future[SimpleResult] = {
+      result.flatMap{
+        case Right(value) => block(value)
+        case Left(error) => Future.successful(InternalServerError(error.stringify))
+      }
+    }
+}
 }
