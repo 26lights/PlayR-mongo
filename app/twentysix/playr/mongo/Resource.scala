@@ -87,3 +87,18 @@ trait ResourceCreate extends core.ResourceCreate {
   def create: EssentialAction
 }
 
+trait ResourceRouteFilter extends BaseResource with core.ResourceRouteFilter
+
+abstract class ResourceReadController[R] extends Resource[R]
+                                            with ResourceRead
+
+abstract class ResourceRwController[R] extends Resource[R]
+                                          with ResourceRead
+                                          with ResourceUpdate
+                                          with ResourceCreate
+
+abstract class ResourceCrudController[R] extends Resource[R]
+                                            with ResourceRead
+                                            with ResourceWrite
+                                            with ResourceDelete
+                                            with ResourceCreate
