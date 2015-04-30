@@ -28,6 +28,10 @@ abstract class JSONCollectionResource[R:Format, I: JSONCollectionIdProvider] ext
 
   def resourceFromSelector(selector: JsObject) = collection.find(selector).one[R]
 
+  def resourceFromId(id: I) = collection.find(idSelector(id)).one[R]
+
+  def resourceFromStringId(sid: String): Future[Option[R]] = parseId(sid).map( resourceFromSelector ).getOrElse(Future.successful(None))
+
   def resourcesFromCollection(selector: JsObject): Future[Seq[R]] = collection.find(selector).cursor[R].collect[Seq]()
 
   def listFromCollection(selector: JsObject): Future[JsValue] = resourcesFromCollection(selector).map { list =>
