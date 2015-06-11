@@ -12,7 +12,7 @@ resolvers += "26Lights releases" at "http://build.26source.org/nexus/content/rep
 
 libraryDependencies ++= Seq (
   "26lights"           %%  "playr"                % "0.4.0",
-  "org.reactivemongo"  %%  "play2-reactivemongo"  % "0.10.5.0.akka23"
+  "org.reactivemongo"  %%  "play2-reactivemongo"  % "0.10.5.0.akka23-26L"
 )
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
