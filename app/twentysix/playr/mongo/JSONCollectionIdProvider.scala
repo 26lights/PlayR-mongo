@@ -2,7 +2,7 @@ package twentysix.playr.mongo
 
 import play.api.libs.json.JsObject
 import reactivemongo.bson.BSONObjectID
-import play.modules.reactivemongo.json.BSONFormats
+import reactivemongo.play.json.BSONFormats
 import play.api.libs.json.JsValue
 
 trait JSONCollectionIdProvider[I]{

@@ -6,8 +6,9 @@ import scala.language.implicitConversions
 
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{Format, JsObject, JsValue, Json}
-import play.modules.reactivemongo.json.collection.JSONCollection
-import reactivemongo.core.commands.LastError
+import reactivemongo.play.json._
+import reactivemongo.play.json.collection.JSONCollection
+import reactivemongo.api.commands.WriteResult
 
 
 abstract class JSONCollectionResource[R:Format, I: JSONCollectionIdProvider] extends Resource[R] {
@@ -16,7 +17,7 @@ abstract class JSONCollectionResource[R:Format, I: JSONCollectionIdProvider] ext
 
   def name = collectionName
 
-  implicit def collection: JSONCollection =  db.collection[JSONCollection](collectionName)
+  implicit def collection: JSONCollection =  reactiveMongoApi.db.collection[JSONCollection](collectionName)
 
   def parseId(sid: String) = idProvider.parse(sid).map(selectorFromId)
 
@@ -32,19 +33,19 @@ abstract class JSONCollectionResource[R:Format, I: JSONCollectionIdProvider] ext
 
   def resourceFromStringId(sid: String): Future[Option[R]] = parseId(sid).map( resourceFromSelector ).getOrElse(Future.successful(None))
 
-  def resourcesFromCollection(selector: JsObject): Future[Seq[R]] = collection.find(selector).cursor[R].collect[Seq]()
+  def resourcesFromCollection(selector: JsObject): Future[Seq[R]] = collection.find(selector).cursor[R]().collect[Seq]()
 
   def listFromCollection(selector: JsObject): Future[JsValue] = resourcesFromCollection(selector).map { list =>
       Json.toJson(list)
   }
 
-  def updateCollection(selector: JsValue, value: JsValue): Future[Either[LastError, JsValue]] = super.updateCollection(selector, value)(collection)
+  def updateCollection(selector: JsObject, value: JsValue): Future[Either[WriteResult, JsValue]] = super.updateCollection(selector, value)(collection)
 
-  def insertInCollection(value: JsValue): Future[Either[LastError, JsValue]] = super.insertInCollection(value)(collection)
+  def insertInCollection(value: JsValue): Future[Either[WriteResult, JsValue]] = super.insertInCollection(value)(collection)
 
-  def insertInCollection(value: R): Future[Either[LastError, JsValue]] =
+  def insertInCollection(value: R): Future[Either[WriteResult, JsValue]] =
     insertInCollection(Json.toJson(value))
 
-  def updateCollection(selector: JsValue, value: R): Future[Either[LastError, JsValue]] =
+  def updateCollection(selector: JsObject, value: R): Future[Either[WriteResult, JsValue]] =
     updateCollection(selector, Json.toJson(value))
 }

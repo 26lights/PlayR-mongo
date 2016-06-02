@@ -9,20 +9,35 @@ import play.api.libs.json.JsObject
 import play.api.mvc.{Action, EssentialAction}
 import play.modules.reactivemongo.MongoController
 import twentysix.playr.{ResourceWrapper, core}
+import play.modules.reactivemongo.ReactiveMongoComponents
+import play.modules.reactivemongo.ReactiveMongoApi
+import play.api.libs.streams.Accumulator
+import akka.stream.Materializer
+
+trait MongoResourceConfigTrait {
+  def reactiveMongoApi: ReactiveMongoApi
+  def materializer: Materializer
+}
+
 
 trait BaseResource extends core.ResourceTrait[JsObject]
                       with core.ResourceShortcuts
                       with ResourceShortcuts
-                      with MongoController{
+                      with MongoController
+                      with ReactiveMongoComponents {
   type ResourceType
+
+  val resourceConfig: MongoResourceConfigTrait
+
+  def reactiveMongoApi = resourceConfig.reactiveMongoApi
 
   def handleAction(selector: JsObject, f: Function2[JsObject, ResourceType, EssentialAction]) = {
     val action = EssentialAction { rh =>
-      Iteratee.flatten {
+      Accumulator.flatten {
         resourceFromSelector(selector).map { resource =>
           resource.map(f(selector, _)(rh)).getOrElse(Action{NotFound}(rh))
         }
-      }
+      }(resourceConfig.materializer)
     }
     Some(action)
   }
