@@ -27,9 +27,9 @@ trait BaseResource extends core.ResourceTrait[JsObject]
                       with ReactiveMongoComponents {
   type ResourceType
 
-  val resourceConfig: MongoResourceConfigTrait
+  val mongoResourceConfig: MongoResourceConfigTrait
 
-  def reactiveMongoApi = resourceConfig.reactiveMongoApi
+  def reactiveMongoApi = mongoResourceConfig.reactiveMongoApi
 
   def handleAction(selector: JsObject, f: Function2[JsObject, ResourceType, EssentialAction]) = {
     val action = EssentialAction { rh =>
@@ -37,7 +37,7 @@ trait BaseResource extends core.ResourceTrait[JsObject]
         resourceFromSelector(selector).map { resource =>
           resource.map(f(selector, _)(rh)).getOrElse(Action{NotFound}(rh))
         }
-      }(resourceConfig.materializer)
+      }(mongoResourceConfig.materializer)
     }
     Some(action)
   }
