@@ -65,13 +65,18 @@ object Resource {
     }
 }
 
+trait ResourceList extends core.ResourceList {
+  this: BaseResource =>
+  def listResource = Some(list)
+
+  def list: EssentialAction
+}
+
 trait ResourceRead extends core.ResourceRead {
   this: BaseResource =>
   def readResource(id: IdentifierType) = handleAction(id, read)
-  def listResource = Some(list)
 
   def read(selector: JsObject, resource: ResourceType): EssentialAction
-  def list: EssentialAction
 }
 
 trait ResourceWrite extends core.ResourceWrite{
